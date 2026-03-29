@@ -142,16 +142,32 @@ def handle_ask(packet: dict, local_ip: str, name: str) -> None:
     sender_ip = packet.get("SENDER_IP")
     if sender_ip and sender_ip != local_ip:
         send_packet(sender_ip, make_reply(name, local_ip))
+        
+        is_new = False
         with peers_lock:
             if sender_ip not in peers:
                 peers[sender_ip] = f"peer@{sender_ip}"
+                is_new = True
+                
+        if is_new:
+            with print_lock:
+                print(f"\n[*] Background discovery: New device detected at {sender_ip}")
+                print("You: ", end="", flush=True)
 
 def handle_reply(packet: dict) -> None:
     peer_ip   = packet.get("RECEIVER_IP")
     peer_name = packet.get("RECEIVER_NAME")
     if peer_ip and peer_name:
+        is_new = False
         with peers_lock:
+            if peer_ip not in peers or peers[peer_ip].startswith("peer@"):
+                is_new = True
             peers[peer_ip] = peer_name
+            
+        if is_new:
+            with print_lock:
+                print(f"\n[*] Background discovery: {peer_name} ({peer_ip}) is online.")
+                print("You: ", end="", flush=True)
 
 def handle_message(packet: dict) -> None:
     sender_ip   = packet.get("SENDER_IP", "")
@@ -515,7 +531,7 @@ def command_shell(local_ip: str, name: str) -> None:
             if target_ip is None:
                 print("[!] No target selected. Use /switch to pick a peer.")
                 continue
-            encoded = user_input.encode("utf-8")
+            encoded = user_input.encode("utf-8", errors="replace")
             if len(encoded) > MAX_BYTES:
                 print(f"[!] Message too long ({len(encoded)} bytes, max {MAX_BYTES}).")
                 continue

@@ -5,7 +5,7 @@ A peer-to-peer chat and file transfer application. It features a custom JSON pro
 ---
 
 ## Workshop 4
-Tested with ...
+Tested with a second computer running the same `chat.py` file (my flatmate's computer).
 
 ## Prerequisites
 
